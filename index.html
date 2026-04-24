@@ -1,352 +1,213 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-    <title>Mapa Interactivo y Base de Datos - Paraná</title>
+    <title>Mapa Interactivo Paraná</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        #map {
-            height: 100vh;
-            width: 100%;
-        }
-
-        /* Estilos para los botones sobre el mapa */
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        #map { height: 100vh; width: 100%; }
+        
         .botones-flotantes {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+            position: absolute; top: 20px; right: 20px; z-index: 1000;
+            display: flex; flex-direction: column; gap: 10px;
         }
 
         .btn-accion {
-            padding: 12px 20px;
-            background: white;
-            border: 2px solid #333;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            transition: all 0.3s;
+            padding: 12px 20px; background: white; border: 2px solid #333;
+            border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s;
         }
 
-        .btn-accion:hover {
-            background: #f0f0f0;
-            transform: scale(1.05);
-        }
-
-        .btn-verde {
-            background: #28a745;
-            color: white;
-            border: none;
-        }
-
-        .btn-verde:hover {
-            background: #218838;
-        }
-
-        /* Vista de Tabla (Oculta por defecto) */
         #vista-tabla {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: white;
-            z-index: 2000;
-            padding: 30px;
-            box-sizing: border-box;
-            overflow-y: auto;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; z-index: 2000; padding: 30px; box-sizing: border-box; overflow-y: auto;
         }
 
-        .header-tabla {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 10px;
-        }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background: #333; color: white; padding: 12px; text-align: left; position: sticky; top: 0; }
+        td { padding: 10px; border-bottom: 1px solid #ddd; font-size: 14px; }
 
-        .filtros-container {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
+        /* Estilos para los botones dentro del popup */
+        .popup-btn {
+            width: 100%; margin-top: 5px; padding: 8px;
+            background: #f8f9fa; border: 1px solid #ddd;
+            border-radius: 4px; cursor: pointer; text-align: left;
         }
-
-        input, select {
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        th {
-            background: #333;
-            color: white;
-            padding: 12px;
-            text-align: left;
-            position: sticky;
-            top: 0;
-        }
-
-        td {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-            font-size: 14px;
-        }
-
-        tr:hover {
-            background-color: #f1f1f1;
-        }
+        .popup-btn:hover { background: #e9ecef; }
+        .popup-header { border-bottom: 1px solid #ccc; margin-bottom: 8px; padding-bottom: 4px; }
     </style>
 </head>
-
 <body>
 
     <div class="botones-flotantes">
         <button class="btn-accion" id="btn-ver-tabla">Ver Base de Datos</button>
-        <button class="btn-accion btn-verde" onclick="window.open('https://docs.google.com/forms/u/0/', '_blank')">
-        Sugerir Actualización
-        </button>
     </div>
 
     <div id="map"></div>
 
     <div id="vista-tabla">
-        <div class="header-tabla">
-            <h2>Base de Datos de Organizaciones</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2>Base de Datos</h2>
             <button class="btn-accion" id="btn-volver-mapa">⬅ Volver al Mapa</button>
         </div>
-
-        <div class="filtros-container">
-            <input type="text" id="buscador" placeholder="Buscar por nombre, ciudad, actividad..." style="flex-grow: 1;">
-            <select id="filtro-categoria">
-                <option value="">Todas las Categorías</option>
-            </select>
-        </div>
-
         <table id="tabla-datos">
             <thead>
-                <tr>
-                    <th>Organización</th>
-                    <th>Municipio</th>
-                    <th>Categoría</th>
-                    <th>Sub-Categoría</th>
-                    <th>Actividades</th>
-                    <th>Contacto</th>
-                </tr>
-            </thead>
-            <tbody>
-                </tbody>
+    <tr>
+        <th>Estado</th>
+        <th>Municipio</th>
+        <th>Categoría</th>
+        <th>Sub-Categoría</th>
+        <th>Organización</th>
+        <th>Localización</th>
+        <th>Nombre/Contacto</th>
+        <th>Celular</th>
+        <th>E-mail</th>
+        <th>Sitio Web</th>
+    </tr>
+</thead>
+            <tbody></tbody>
         </table>
     </div>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
     <script>
-        // --- 1. CONFIGURACIÓN INICIAL ---
-        function normalizar(texto) {
-            return texto?.toString().trim().toLowerCase();
-        }
-
         var map = L.map('map').setView([-25.4, -49.2], 7);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 18
-        }).addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
         let datosGlobal = [];
+        const normalizar = (t) => t?.toString().trim().toLowerCase();
 
-        // Elementos del DOM
-        const vistaTabla = document.getElementById('vista-tabla');
-        const cuerpoTabla = document.querySelector('#tabla-datos tbody');
-        const buscador = document.getElementById('buscador');
-        const filtroCat = document.getElementById('filtro-categoria');
-
-        // --- 2. LÓGICA DE CARGA DE DATOS ---
+        // Carga de datos
         Promise.all([
             fetch('parana.json').then(res => res.json()),
             fetch('datos.json').then(res => res.json())
         ]).then(([geoData, datos]) => {
-            
-            // Guardar y limpiar datos
-            datosGlobal = datos.filter(d => d["Município"]);
+            datosGlobal = datos;
 
-            // Dibujar Mapa
             L.geoJSON(geoData, {
-                style: {
-                    color: "#3388ff",
-                    weight: 2,
-                    fillOpacity: 0.2
-                },
+                style: { color: "#3388ff", weight: 2, fillOpacity: 0.2 },
                 onEachFeature: function (feature, layer) {
+                    const nombreMun = feature.properties.name;
+
+                    // EFECTO HOVER
+                    layer.on('mouseover', function (e) {
+                        this.setStyle({ fillOpacity: 0.5, weight: 3 });
+                        layer.bindTooltip(nombreMun).openTooltip();
+                    });
+
+                    layer.on('mouseout', function (e) {
+                        this.setStyle({ fillOpacity: 0.2, weight: 2 });
+                    });
+
+                    // CLICK INICIAL
                     layer.on('click', function (e) {
-                        const nombreMun = feature.properties.name;
-                        mostrarInfoMunicipio(nombreMun, e.latlng);
+                        mostrarCategorias(nombreMun, e.latlng);
                     });
                 }
             }).addTo(map);
-
-            // Preparar el Selector de Categorías
-            llenarSelectCategorias();
-
-        }).catch(err => console.error("Error cargando archivos:", err));
-
-
-        // --- 3. FUNCIONES DE LA TABLA Y FILTROS ---
-
-        function llenarSelectCategorias() {
-            const cats = [...new Set(datosGlobal.map(d => d["Categoria geral"]))].filter(Boolean);
-            cats.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c;
-                opt.textContent = c;
-                filtroCat.appendChild(opt);
-            });
-        }
-
-        function renderizarTabla(datos) {
-            cuerpoTabla.innerHTML = "";
-            datos.forEach(d => {
-                const fila = document.createElement('tr');
-                
-                // Nota: Acceso a propiedades con espacios tal cual vienen en tu JSON
-                const actividades = d["Categoria "]?.[" Tema "]?.[" Atividade"] || '-';
-                const contacto = (d["E-mail"] || d["Cel"]) ? `${d["E-mail"]} <br> ${d["Cel"]}` : '-';
-
-                fila.innerHTML = `
-                    <td><b>${d["Organización"] || '-'}</b></td>
-                    <td>${d["Município"] || '-'}</td>
-                    <td>${d["Categoria geral"] || '-'}</td>
-                    <td>${d["Sub-categoria"] || '-'}</td>
-                    <td><small>${actividades}</small></td>
-                    <td>${contacto}</td>
-                `;
-                cuerpoTabla.appendChild(fila);
-            });
-        }
-
-        function filtrarDatos() {
-            const termino = buscador.value.toLowerCase();
-            const catSeleccionada = filtroCat.value;
-
-            const filtrados = datosGlobal.filter(d => {
-                const contenidoFila = JSON.stringify(d).toLowerCase();
-                const coincideBusqueda = contenidoFila.includes(termino);
-                const coincideCat = catSeleccionada === "" || d["Categoria geral"] === catSeleccionada;
-                return coincideBusqueda && coincideCat;
-            });
-
-            renderizarTabla(filtrados);
-        }
-
-        // --- 4. EVENTOS ---
-
-        document.getElementById('btn-ver-tabla').onclick = () => {
-            vistaTabla.style.display = 'block';
-            renderizarTabla(datosGlobal);
-        };
-
-        document.getElementById('btn-volver-mapa').onclick = () => {
-            vistaTabla.style.display = 'none';
-        };
-
-        buscador.oninput = filtrarDatos;
-        filtroCat.onchange = filtrarDatos;
-
-        // --- 5. LÓGICA ORIGINAL DEL POPUP (Mantenida) ---
-       // --- 5. LÓGICA DE POLÍGONOS RESTAURADA ---
-
-function mostrarInfoMunicipio(municipio, latlng) {
-    const filtrados = datosGlobal.filter(d => 
-        normalizar(d["Município"]) === normalizar(municipio)
-    );
-
-    let contenido = `<div style="max-height:200px; overflow-y:auto;">`;
-    contenido += `<b>Municipio: ${municipio}</b><br><br>`;
-
-    if (filtrados.length > 0) {
-        // Obtenemos las categorías únicas en este municipio
-        let categorias = [...new Set(filtrados.map(f => f["Categoria geral"]))].filter(Boolean);
-        
-        contenido += `<i>Seleccione una categoría:</i><br><br>`;
-        categorias.forEach(cat => {
-            // Usamos una versión simplificada de latlng para pasar por parámetro
-            const coords = `${latlng.lat},${latlng.lng}`;
-            contenido += `
-                <button onclick="mostrarSubcategorias('${municipio}', '${cat}', '${coords}')" 
-                        style="width:100%; margin-bottom:5px; cursor:pointer; padding:5px;">
-                    ${cat}
-                </button><br>`;
         });
-    } else {
-        contenido += "Sin organizaciones registradas en este municipio.";
-    }
-    
-    contenido += `</div>`;
 
-    L.popup().setLatLng(latlng).setContent(contenido).openOn(map);
+        // NIVEL 1: Categoría Geral
+        function mostrarCategorias(municipio, latlng) {
+            const filtrados = datosGlobal.filter(d => normalizar(d["Município"]) === normalizar(municipio));
+            let cats = [...new Set(filtrados.map(f => f["Categoria geral"]))].filter(Boolean);
+            
+            let html = `<div class="popup-header"><b>${municipio}</b></div>`;
+            if(cats.length > 0) {
+                cats.forEach(cat => {
+                    html += `<button class="popup-btn" onclick="mostrarSubcats('${municipio}', '${cat}', '${latlng.lat},${latlng.lng}')">${cat}</button>`;
+                });
+            } else { html += "Sin datos."; }
+            
+            L.popup().setLatLng(latlng).setContent(html).openOn(map);
+        }
+
+        // NIVEL 2: Sub-categoría
+        window.mostrarSubcats = function(mun, cat, coords) {
+            const filtrados = datosGlobal.filter(d => 
+                normalizar(d["Município"]) === normalizar(mun) && d["Categoria geral"] === cat
+            );
+            let subcats = [...new Set(filtrados.map(f => f["Sub-categoria"]))].filter(Boolean);
+            
+            let html = `<div class="popup-header"><b>${mun}</b> > ${cat}</div>`;
+            subcats.forEach(sub => {
+                html += `<button class="popup-btn" onclick="mostrarOrgLista('${mun}', '${cat}', '${sub}', '${coords}')">${sub}</button>`;
+            });
+            
+            const ll = coords.split(',');
+            L.popup().setLatLng([ll[0], ll[1]]).setContent(html).openOn(map);
+        };
+
+        // NIVEL 3: Lista de Organizaciones como botones
+        window.mostrarOrgLista = function(mun, cat, sub, coords) {
+            const filtrados = datosGlobal.filter(d => 
+                normalizar(d["Município"]) === normalizar(mun) && 
+                d["Categoria geral"] === cat && 
+                d["Sub-categoria"] === sub
+            );
+
+            let html = `<div class="popup-header"><b>Organizaciones:</b></div>`;
+            filtrados.forEach((org, index) => {
+                // Usamos el index para identificar la organización exacta
+                const nombreEscapado = org["Organização"].replace(/'/g, "\\'"); 
+        html += `<button class="popup-btn" onclick="mostrarDetalleFinal('${nombreEscapado}', '${coords}')">🏢 ${org["Organização"]}</button>`;
+            });
+
+            const ll = coords.split(',');
+            L.popup().setLatLng([ll[0], ll[1]]).setContent(html).openOn(map);
+        };
+
+        // NIVEL 4: Detalle de Columnas 16, 17, 18 y 19
+       // CAMBIO: Ahora el primer parámetro se llama nombreOrg
+window.mostrarDetalleFinal = function(nombreOrg, coords) {
+    const org = datosGlobal.find(d => d["Organização"] === nombreOrg);
+    if (!org) return;
+
+    let html = `<div class="popup-header"><b>Detalles: ${org["Organização"]}</b></div>`;
+    html += `<div style="font-size:12px; line-height:1.4;">`;
+    html += `<b>Local:</b> ${org["Local"] || 'N/A'}<br>`;
+    html += `<b>Contacto:</b> ${org["Nome / Contato"] || 'N/A'}<br>`;
+    html += `<b>Cel:</b> ${org["Cel"] || 'N/A'}<br>`;
+    html += `<b>E-mail:</b> ${org["E-mail"] || 'N/A'}<br>`;
+    html += `<b>Web:</b> ${org["Site"] || 'N/A'}`;
+    html += `</div>`;
+
+    const ll = coords.split(',');
+    L.popup().setLatLng([ll[0], ll[1]]).setContent(html).openOn(map);
+};
+
+        // RENDER DE TABLA (ORGANIZACIÓN EN 6ta COLUMNA)
+        function renderizarTabla(datos) {
+    const cuerpo = document.querySelector('#tabla-datos tbody');
+    cuerpo.innerHTML = "";
+    
+    datos.forEach(d => {
+        const fila = document.createElement('tr');
+        
+        // El orden visual de las 10 columnas según tus nombres:
+        fila.innerHTML = `
+            <td>${d["Estado"] || '-'}</td>
+            <td>${d["Município"] || '-'}</td>
+            <td>${d["Categoria geral"] || '-'}</td>
+            <td>${d["Sub-categoria"] || '-'}</td>
+            <td><b>${d["Organização"] || '-'}</b></td>
+            <td>${d["Local"] || '-'}</td>
+            <td>${d["Nome / Contato"] || '-'}</td>
+            <td>${d["Cel"] || '-'}</td>
+            <td>${d["E-mail"] || '-'}</td>
+            <td>${d["Site"] || '-'}</td>
+        `;
+        cuerpo.appendChild(fila);
+    });
 }
 
-// Función para mostrar Subcategorías (Nivel 2)
-window.mostrarSubcategorias = function(municipio, categoria, coordsStr) {
-    const filtrados = datosGlobal.filter(d => 
-        normalizar(d["Município"]) === normalizar(municipio) &&
-        d["Categoria geral"] === categoria
-    );
-
-    let subcategorias = [...new Set(filtrados.map(f => f["Sub-categoria"]))].filter(Boolean);
-    
-    let contenido = `<b>${municipio}</b><br>cat: <i>${categoria}</i><br><br>`;
-    subcategorias.forEach(sub => {
-        contenido += `
-            <button onclick="mostrarOrganizaciones('${municipio}', '${categoria}', '${sub}', '${coordsStr}')" 
-                    style="width:100%; margin-bottom:5px; cursor:pointer; padding:5px;">
-                ${sub}
-            </button><br>`;
-    });
-
-    const latlng = coordsStr.split(',');
-    L.popup().setLatLng([latlng[0], latlng[1]]).setContent(contenido).openOn(map);
-};
-
-// Función para mostrar Organizaciones finales (Nivel 3)
-window.mostrarOrganizaciones = function(municipio, categoria, subcategoria, coordsStr) {
-    const filtrados = datosGlobal.filter(d => 
-        normalizar(d["Município"]) === normalizar(municipio) &&
-        d["Categoria geral"] === categoria &&
-        d["Sub-categoria"] === subcategoria
-    );
-
-    let contenido = `<b>Organizaciones en ${municipio}:</b><br><hr>`;
-    filtrados.forEach(f => {
-        contenido += `• <b>${f["Organización"]}</b><br>`;
-        if(f["E-mail"]) contenido += `<small>${f["E-mail"]}</small><br>`;
-        contenido += `<br>`;
-    });
-
-    const latlng = coordsStr.split(',');
-    L.popup().setLatLng([latlng[0], latlng[1]]).setContent(contenido).openOn(map);
-};
+        document.getElementById('btn-ver-tabla').onclick = () => {
+            document.getElementById('vista-tabla').style.display = 'block';
+            renderizarTabla(datosGlobal);
+        };
+        document.getElementById('btn-volver-mapa').onclick = () => {
+            document.getElementById('vista-tabla').style.display = 'none';
+        };
     </script>
 </body>
-
 </html>
