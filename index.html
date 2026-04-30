@@ -8,6 +8,64 @@
         body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         #map { height: 100vh; width: 100%; }
         
+/* Tooltip estilo terminal */
+.tech-tooltip {
+    background-color: rgba(255, 255, 255, 0.95) !important; /* Fondo blanco casi opaco */
+    backdrop-filter: blur(4px); /* Desenfoque de fondo sutil */
+    color: #1a1a1a !important; /* Texto gris muy oscuro, casi negro */
+    border: none !important; /* Sin bordes */
+    border-radius: 8px !important; /* Esquinas redondeadas suaves */
+    padding: 8px 14px !important;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.3px !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15) !important; /* Sombra suave y profunda */
+}
+
+/* Quitar la flechita clásica del tooltip para un look más limpio */
+.leaflet-tooltip-top:before, 
+.leaflet-tooltip-bottom:before, 
+.leaflet-tooltip-left:before, 
+.leaflet-tooltip-right:before {
+    display: none !important;
+}
+
+.leaflet-interactive {
+    transition: fill 0.3s ease, fill-opacity 0.3s ease, stroke 0.3s ease, stroke-width 0.3s ease;
+}
+
+/* Botones flotantes estilo "Interface de Usuario" */
+.btn-accion {
+    padding: 12px 24px;
+    background: rgba(0, 40, 80, 0.7);
+    color: #00d4ff;
+    border: 1px solid #00d4ff;
+    border-radius: 4px;
+    backdrop-filter: blur(8px); /* Efecto cristal */
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    transition: all 0.4s;
+}
+
+.btn-accion:hover {
+    background: #00d4ff;
+    color: #001428;
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
+    transform: scale(1.05);
+}
+
+/* Scrollbar para la tabla (para que no rompa la estética) */
+#vista-tabla::-webkit-scrollbar {
+    width: 8px;
+}
+#vista-tabla::-webkit-scrollbar-thumb {
+    background: #00d4ff;
+    border-radius: 4px;
+}
+
+
         .botones-flotantes {
             position: absolute; top: 20px; right: 20px; z-index: 1000;
             display: flex; flex-direction: column; gap: 10px;
@@ -35,12 +93,34 @@
         }
         .popup-btn:hover { background: #e9ecef; }
         .popup-header { border-bottom: 1px solid #ccc; margin-bottom: 8px; padding-bottom: 4px; }
+        .filtros-tabla {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 16px;
+            align-items: flex-end;
+        }
+        .filtros-tabla label {
+            display: flex;
+            flex-direction: column;
+            font-size: 14px;
+            color: #333;
+        }
+        .filtros-tabla select {
+            margin-top: 4px;
+            padding: 8px 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            min-width: 180px;
+            background: white;
+        }
     </style>
 </head>
 <body>
 
     <div class="botones-flotantes">
         <button class="btn-accion" id="btn-ver-tabla">Ver Base de Datos</button>
+        <a class="btn-accion" id="btn-sugerencia" href="https://forms.gle/REEMPLAZA_CON_TU_LINK" target="_blank" rel="noopener noreferrer">Sugerir nueva organización</a>
     </div>
 
     <div id="map"></div>
@@ -49,6 +129,23 @@
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <h2>Base de Datos</h2>
             <button class="btn-accion" id="btn-volver-mapa">⬅ Volver al Mapa</button>
+        </div>
+        <div class="filtros-tabla">
+            <label>Estado
+                <select id="filtro-estado">
+                    <option value="">Todos</option>
+                </select>
+            </label>
+            <label>Município
+                <select id="filtro-municipio">
+                    <option value="">Todos</option>
+                </select>
+            </label>
+            <label>Categoría geral
+                <select id="filtro-categoria">
+                    <option value="">Todos</option>
+                </select>
+            </label>
         </div>
         <table id="tabla-datos">
             <thead>
@@ -72,7 +169,12 @@
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
         var map = L.map('map').setView([-25.4, -49.2], 7);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        var CartoDB_VoyagerLabelsUnder = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png', {
+	attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+	subdomains: 'abcd',
+	maxZoom: 20
+}).addTo(map);
 
         let datosGlobal = [];
         const normalizar = (t) => t?.toString().trim().toLowerCase();
@@ -84,27 +186,51 @@
         ]).then(([geoData, datos]) => {
             datosGlobal = datos;
 
-            L.geoJSON(geoData, {
-                style: { color: "#3388ff", weight: 2, fillOpacity: 0.2 },
-                onEachFeature: function (feature, layer) {
-                    const nombreMun = feature.properties.name;
+         L.geoJSON(geoData, {
+    style: {
+        color: "#0960ae",      // Borde azul tecnológico
+        weight: 1,
+        fillColor: "#64a6e3",  // Azul base
+        fillOpacity: 0.4
+    },
+    onEachFeature: function (feature, layer) {
+        const nombreMun = feature.properties.name;
 
-                    // EFECTO HOVER
-                    layer.on('mouseover', function (e) {
-                        this.setStyle({ fillOpacity: 0.5, weight: 3 });
-                        layer.bindTooltip(nombreMun).openTooltip();
-                    });
+        // EVENTO AL PASAR EL MOUSE
+        layer.on('mouseover', function (e) {
+            // Aplicamos el estilo resaltado (la transición CSS hará el resto)
+            this.setStyle({ 
+                fillOpacity: 0.8, 
+                fillColor: "#1e3a8a", 
+                weight: 2,
+                color: "#ffffff" 
+            });
 
-                    layer.on('mouseout', function (e) {
-                        this.setStyle({ fillOpacity: 0.2, weight: 2 });
-                    });
+            // ACTIVAR EL TOOLTIP (Aquí estaba el fallo)
+            layer.bindTooltip(nombreMun, {
+                sticky: true,
+                direction: 'top',
+                offset: [0, -10],
+                className: 'tech-tooltip'
+            }).openTooltip();
+        });
 
-                    // CLICK INICIAL
-                    layer.on('click', function (e) {
-                        mostrarCategorias(nombreMun, e.latlng);
-                    });
-                }
-            }).addTo(map);
+        // EVENTO AL QUITAR EL MOUSE
+        layer.on('mouseout', function (e) {
+            this.setStyle({ 
+                fillOpacity: 0.4,
+                fillColor: "#64a6e3",
+                weight: 1,
+                color: "#0960ae" 
+            });
+        });
+
+        // EVENTO AL HACER CLICK
+        layer.on('click', function (e) {
+            mostrarCategorias(nombreMun, e.latlng);
+        });
+    }
+}).addTo(map);
         });
 
         // NIVEL 1: Categoría Geral
@@ -176,7 +302,49 @@ window.mostrarDetalleFinal = function(nombreOrg, coords) {
     L.popup().setLatLng([ll[0], ll[1]]).setContent(html).openOn(map);
 };
 
-        // RENDER DE TABLA (ORGANIZACIÓN EN 6ta COLUMNA)
+        const filtroEstado = document.getElementById('filtro-estado');
+        const filtroMunicipio = document.getElementById('filtro-municipio');
+        const filtroCategoria = document.getElementById('filtro-categoria');
+
+        function llenarSelect(select, opciones) {
+            select.innerHTML = '<option value="">Todos</option>' + opciones.map(o => `<option value="${o}">${o}</option>`).join('');
+        }
+
+        function cargarFiltros(datos) {
+            const estados = [...new Set(datos.map(d => d["Estado"]).filter(Boolean))].sort();
+            const municipios = [...new Set(datos.map(d => d["Município"]).filter(Boolean))].sort();
+            const categorias = [...new Set(datos.map(d => d["Categoria geral"]).filter(Boolean))].sort();
+
+            llenarSelect(filtroEstado, estados);
+            llenarSelect(filtroMunicipio, municipios);
+            llenarSelect(filtroCategoria, categorias);
+        }
+
+        function actualizarMunicipios() {
+            const estado = filtroEstado.value;
+            const municipios = [...new Set(datosGlobal
+                .filter(d => !estado || d["Estado"] === estado)
+                .map(d => d["Município"]).filter(Boolean))].sort();
+            const seleccionActual = filtroMunicipio.value;
+            llenarSelect(filtroMunicipio, municipios);
+            if (municipios.includes(seleccionActual)) {
+                filtroMunicipio.value = seleccionActual;
+            }
+        }
+
+        function aplicarFiltros() {
+            const estado = filtroEstado.value;
+            const municipio = filtroMunicipio.value;
+            const categoria = filtroCategoria.value;
+
+            let datosFiltrados = datosGlobal;
+            if (estado) datosFiltrados = datosFiltrados.filter(d => d["Estado"] === estado);
+            if (municipio) datosFiltrados = datosFiltrados.filter(d => d["Município"] === municipio);
+            if (categoria) datosFiltrados = datosFiltrados.filter(d => d["Categoria geral"] === categoria);
+
+            renderizarTabla(datosFiltrados);
+        }
+
         function renderizarTabla(datos) {
     const cuerpo = document.querySelector('#tabla-datos tbody');
     cuerpo.innerHTML = "";
@@ -201,8 +369,16 @@ window.mostrarDetalleFinal = function(nombreOrg, coords) {
     });
 }
 
+        filtroEstado.addEventListener('change', () => {
+            actualizarMunicipios();
+            aplicarFiltros();
+        });
+        filtroMunicipio.addEventListener('change', aplicarFiltros);
+        filtroCategoria.addEventListener('change', aplicarFiltros);
+
         document.getElementById('btn-ver-tabla').onclick = () => {
             document.getElementById('vista-tabla').style.display = 'block';
+            cargarFiltros(datosGlobal);
             renderizarTabla(datosGlobal);
         };
         document.getElementById('btn-volver-mapa').onclick = () => {
